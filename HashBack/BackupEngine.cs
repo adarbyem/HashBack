@@ -6,7 +6,7 @@ namespace HashBack
 {
     class BackupEngine
     {
-        public void backupEngine(string fileName, string hash, string destination, string simpleFileName)
+        public void backupEngine(string fileName, string hash, string destination, string simpleFileName, int backupID)
         {
             //local variables
             string sqlQuery;
@@ -67,7 +67,7 @@ namespace HashBack
                 //Display results and query the database
                 try
                 {
-                    sqlQuery = "INSERT INTO Hashes (Path, Hash, Timestamp, IsBackup, BackupID) VALUES ('" + fileName + "', '" + hash + "', '" + DateTime.Now + "', '" + false.ToString() + "' , '" + 1.ToString() + "')";
+                    sqlQuery = "INSERT INTO Hashes (Path, Hash, Timestamp, IsBackup, BackupID) VALUES ('" + fileName + "', '" + hash + "', '" + DateTime.Now + "', '" + false.ToString() + "' , '" + backupID.ToString() + "')";
                     query.doQuery(sqlQuery, 1);
                 }
                 catch(Exception ex)

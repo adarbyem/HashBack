@@ -88,7 +88,7 @@ namespace HashBack
                     File.Delete(path.ElementAt(count));
                     query.doQuery("DELETE FROM Hashes WHERE BackupID LIKE '" + backupId.ElementAt(count) + "'", 1);
                     needsRefreshed = true;
-                    MessageBox.Show("Backup: " + path.ElementAt(count) + " has been altered! All references to this backup have been removed and the backup file deleted.\n\n It is recommended that you perform a fresh backup of the desired files.");
+                    MessageBox.Show("Backup: " + path.ElementAt(count) + "BackupID: " + backupId.ElementAt(count) + " has been altered! All references to this backup have been removed and the backup file deleted.\n\n It is recommended that you perform a fresh backup of the desired files.");
                 }
             }
             //Refreshes the list if the backups were missing or altered

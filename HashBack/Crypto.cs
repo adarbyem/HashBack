@@ -1,7 +1,6 @@
 ﻿using System.Text;
 using System.Security.Cryptography;
 using System.IO;
-using System;
 
 namespace HashBack
 {
@@ -38,7 +37,6 @@ namespace HashBack
                         //Create Instance of MD5
                         MD5 md5Hash = MD5.Create();
                         buffer = md5Hash.ComputeHash(stream);
-                        Console.WriteLine(buildString(buffer));
                         stream.Close();
                         //Hash Output
                         return (buildString(buffer));

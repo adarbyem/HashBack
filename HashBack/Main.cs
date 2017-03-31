@@ -54,9 +54,8 @@ namespace HashBack
                 verify.verify();
             }
 
-            //TESTING
+            //Populate the Database Table
             populateData();
-            //END TESTING
 
             //Create local database file if it does not exist
             if (!databaseExists)
@@ -65,7 +64,6 @@ namespace HashBack
                 CreateDB createdb = new CreateDB();
                 createdb.createDB();
             }
-            //else Console.WriteLine("Database Found");
         }
 
         private void buttonBrowse_Click(object sender, EventArgs e)
@@ -79,11 +77,10 @@ namespace HashBack
                 backupSourcePath = dialogue.SelectedPath;
                 originalSource = backupSourcePath;
                 hasPickedSource = true;
-                
+                //Call the function to check for valid source and destination
+                inputDialog = new InputDialog();
+                inputDialog.Show();
             }
-            //Call the function to check for valid source and destination
-            inputDialog = new InputDialog();
-            inputDialog.Show();
         }
 
         private void mainEnabledChanged(object sender, EventArgs e)
@@ -94,7 +91,7 @@ namespace HashBack
         private void buttonBackup_Click(object sender, EventArgs e)
         {
             //Local Variables
-
+            int backupID = 0;
 
             if (!File.Exists(backupSourcePath))
             {
@@ -102,16 +99,39 @@ namespace HashBack
                 buttonBackup.Enabled = false;
                 hasPickedSource = false;
                 hasPickedDestination = false;
+                labelStatus.Text = "Status: Determining Backup Size";
+                this.Update();
                 FolderSize folder = new FolderSize();
                 folderSize = folder.getSize(backupSourcePath);
                 progressBarBackup.Maximum = (int)folderSize;
                 progressBarBackup.Refresh();
+                labelStatus.Text = "Status: Creating Backup Folder";
+                this.Update();
                 Directory.CreateDirectory(backupDestinationPath);
-                tree(backupSourcePath);
+                labelStatus.Text = "Status: Performing Backup";
+                this.Update();
+                //Get the next backupID
+                for(int count = 0; count < verify.backupId.Count(); count++)
+                {
+                    if (backupID < int.Parse(verify.backupId.ElementAt(count)))
+                    {
+                        backupID = int.Parse(verify.backupId.ElementAt(count));
+                    }
+                }
+                backupID++;
+                tree(backupSourcePath, backupID);
+                labelStatus.Text = "Status: Compressing Backup and Deleting Temporary Files";
                 //Begin Cleanup and Compression
                 CleanUp cleanUp = new CleanUp();
-                cleanUp.cleanUp(originalDestination, inputDialog.name);
+                cleanUp.cleanUp(originalDestination, inputDialog.name, backupID);
+                labelStatus.Text = "Status: Verifying Backup";
+                this.Update();
                 verify.verify();
+                //Set Program to Defaults
+                labelStatus.Text = "Status: Ready";
+                labelFile.Text = "Current File:";
+                labelName.Text = "Backup Name: Select New Backup";
+                labelLocation.Text = "Backup Location: Select New Bakup Location";
                 populateData();
                 progressBarBackup.Value = 0;
                 current = 0.0;
@@ -131,6 +151,7 @@ namespace HashBack
                 backupDestinationPath = folderDialogue.SelectedPath;
                 originalDestination = backupDestinationPath;
                 backupDestinationPath += "\\Temp";
+                labelLocation.Text = "Backup Location: " + originalDestination;
                 hasPickedDestination = true;
             }
             //Call the function to check for valid source and destination   
@@ -140,26 +161,30 @@ namespace HashBack
         //Function to verify that the user has selected a source and destination folder for the backup
         private void checkBackupReady()
         {
-            if (hasPickedDestination && hasPickedSource) buttonBackup.Enabled = true;
+            if (hasPickedDestination && hasPickedSource)
+            {
+                buttonBackup.Enabled = true;
+                labelName.Text = "Backup Name: " + inputDialog.name;
+            }
         }
 
         //Recursive function to go through the source and destination trees
         //Analysing the files and folders and making fuction calls accordingly
-        private void tree(string directory)
+        private void tree(string directory, int backupID)
         {
             //local variables
             int parentLen = 0;
             int dirLen = 0;
-            
             string charTrim;
             string extSource;
             FileInfo info;
             foreach (string x in Directory.GetFiles(directory))
             {
                 info = new FileInfo(x);
-                current += info.Length / 1024;
                 progressBarBackup.Value = (int)current;
-                Console.WriteLine(progressBarBackup.Value);
+                labelFile.Text = "Current File: " + x;
+                labelStatus.Text = "Status: Hashing File...";
+                this.Update();
                 //Hash the file
                 hash = crypto.doHash(1, x);
                 //Start Backup Engine
@@ -170,8 +195,11 @@ namespace HashBack
                 }
                 extSource = x.Substring(originalSource.Length, x.Length - originalSource.Length);
                 extSource = extSource.Substring(0, extSource.Length - charTrim.Length);
+                labelStatus.Text = "Status: Performing Backup - Total Progress: " + progressBarBackup.Value + " KB / " + progressBarBackup.Maximum + " KB";
+                this.Update();//Update the UI
                 BackupEngine backupEngine = new BackupEngine();
-                backupEngine.backupEngine(x, hash, backupDestinationPath+extSource, charTrim);
+                backupEngine.backupEngine(x, hash, backupDestinationPath+extSource, charTrim, backupID);
+                current += info.Length / 1024;
             }
             foreach (string y in Directory.GetDirectories(directory))
             {
@@ -180,9 +208,7 @@ namespace HashBack
                 dirLen = y.Length;
                 //Create the folder
                 Directory.CreateDirectory(backupDestinationPath + y.Substring(originalSource.Length, y.Length - originalSource.Length));
-                tree(y);
-
-
+                tree(y, backupID);
             }
         }
         public void populateData()
@@ -193,6 +219,11 @@ namespace HashBack
                 dataGridViewBackup.Rows.Add(verify.backupName.ElementAt(count), verify.path.ElementAt(count), verify.date.ElementAt(count));
             }
             
+        }
+
+        private void labelLocation_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }
